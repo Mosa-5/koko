@@ -60,7 +60,7 @@ const ExercisePage = () => {
 
             
 
-            <div className="w-full bg-black h-[437px] rounded-lg max-w-3xl">
+            <div className="w-full rounded-lg max-w-3xl">
                 {videoArray
                     .filter(obj => obj.name === videoName) // Fixed property name
                     .map(obj => (
