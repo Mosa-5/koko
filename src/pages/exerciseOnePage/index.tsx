@@ -280,7 +280,7 @@ useEffect(() => {
 
 
  {/* Word display */}
- <div className="flex justify-center text-3xl md:text-4xl font-bold gap-4 flex-wrap">
+ <div className="flex justify-center text-3xl md:text-4xl font-bold gap-3 flex-wrap">
                 {word.split("").map((letter, index) => (
                     <div key={index} className="flex items-center">
             <span className={`transition-colors duration-300 ${
