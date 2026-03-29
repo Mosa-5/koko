@@ -7,7 +7,7 @@ const Header: React.FC = () => {
     return (
         <header className="bg-background-color text-black py-5 top-0 left-0 right-0 z-50 w-full overflow-x-hidden">
             <div className="py-2 w-full flex justify-between items-center px-4 md:px-5 lg:px-20 xl:px-30 flex-col gap-5 md:flex-row">
-                <div className="felx items-center">
+                <div className="flex items-center">
                     <Link to={'/home'} className="flex gap-2 fill-main-color items-end">
                         <svg className="w-10 h-10" fill="" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
                              viewBox="0 0 256 256"
@@ -25,8 +25,8 @@ const Header: React.FC = () => {
                 <div className="w-full flex justify-between max-w-lg items-center gap-5 flex-col md:flex-row md:justify-end">
                     <Link to={'/aboutUs'} className="w-full md:w-fit"><Button className="text-xl w-full md:w-fit tracking-widest  font-semibold text-background-color">About
                         Us</Button></Link>
-                    <Link className="w-full md:w-fit" to={'https://www.youtube.com/watch?v=Q7avDe-yKDQ'}  target="_blank"
-  rel="noopener noreferrer" ><Button className="text-xl tracking-widest  w-full md:w-fit font-semibold text-background-color italic">Our Inspiration</Button></Link>
+                    <a className="w-full md:w-fit" href="https://www.youtube.com/watch?v=Q7avDe-yKDQ" target="_blank"
+  rel="noopener noreferrer"><Button className="text-xl tracking-widest  w-full md:w-fit font-semibold text-background-color italic">Our Inspiration</Button></a>
                 </div>
             </div>
         </header>

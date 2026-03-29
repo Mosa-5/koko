@@ -20,7 +20,7 @@ const ExercisePage = () => {
 
     const [recognizer, setRecognizer] = useState<GestureRecognizer>();
     const [webcamRunning, setWebcamRunning] = useState(false);
-    const [weBcamLoading, setWebCamLoading] = useState(false);
+    const [webcamLoading, setWebcamLoading] = useState(false);
     const [showLandmarks, setShowLandmarks] = useState(false);
     const [hintShown, setHintShown] = useState<boolean>(false);
     const [recognizerLoading, setRecognizerLoading] = useState(true);
@@ -116,16 +116,10 @@ useEffect(() => {
             
             if (currentIndex === -1 || currentIndex >= currentWord.length) return prev;
             const expectedLetter = currentWord[currentIndex];
-            console.log("expectedLetter", expectedLetter)
-            
-            console.log("detectedLetter", detectedLetter)
             if (detectedLetter === expectedLetter) {
-                console.log("finally", expectedLetter)
                 const newLetters = [...prev];
 
                 newLetters[currentIndex] = true;
-                console.log(newLetters)
-                console.log("this index works", newLetters[currentIndex])
 
                 // Find next index immediately
                 currentLetterIndexRef.current = newLetters.findIndex(v => !v);
@@ -173,7 +167,7 @@ useEffect(() => {
             canvasCtx.restore();
 
             // Process gestures
-            if (results.gestures.length > 0) {
+            if (results.gestures.length > 0 && results.gestures[0].length > 0) {
                 const bestGesture = results.gestures[0][0];
               
                 if (bestGesture.score > 0.7) {
@@ -205,7 +199,7 @@ useEffect(() => {
                 currentLetterIndexRef.current = 0;
             } else {
                 // Start webcam with current word but reset progress
-                setWebCamLoading(true)
+                setWebcamLoading(true)
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {width: 1280, height: 720}
                 });
@@ -215,7 +209,7 @@ useEffect(() => {
                     videoRef.current.onloadeddata = () => {
                         canvasRef.current!.width = videoRef.current!.videoWidth;
                         canvasRef.current!.height = videoRef.current!.videoHeight;
-                        setWebCamLoading(false)
+                        setWebcamLoading(false)
                         setWebcamRunning(true);
                         currentLetterIndexRef.current = 0;
                         setCorrectLetters(new Array(word.length).fill(false));
@@ -256,7 +250,7 @@ useEffect(() => {
     className={`w-full max-w-lg md:max-w-48 text-white ${
         webcamRunning ? "bg-red-600 hover:bg-red-500" : ""
     } transition-colors`}
-    disabled={recognizerLoading || weBcamLoading}
+    disabled={recognizerLoading || webcamLoading}
 >
     {recognizerLoading ? "Loading..." : 
      webcamRunning ? "Stop Webcam" : "Start Webcam"}
@@ -368,7 +362,7 @@ useEffect(() => {
                         ref={canvasRef}
                         className={`absolute top-0 left-0 w-full ${webcamRunning ? '' : 'hidden'} h-full pointer-events-none`}
                     />
-                    {weBcamLoading &&  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"><Loader/></div> }
+                    {webcamLoading &&  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"><Loader/></div> }
                     {/* Toggle Landmark Drawing */}
                     <button
                         onClick={() => setShowLandmarks(prev => !prev)}
