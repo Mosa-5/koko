@@ -4,7 +4,6 @@ import { videoArray } from "@/DummyDataVideos";
 import { signLanguages } from "../catalog/dummyData";
 import { Button } from "@/components/ui/button";
 import { useScore, calcOtpScore } from "@/hooks/useScore";
-import CompletionToast from "@/components/completionToast";
 
 const ExercisePage = () => {
     const { lang, id } = useParams();

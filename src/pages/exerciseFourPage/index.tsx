@@ -4,7 +4,6 @@ import { signLanguages } from "../catalog/dummyData";
 import { handArray } from "@/DummyDataHands";
 import { Button } from "@/components/ui/button";
 import { useScore, calcOtpScore } from "@/hooks/useScore";
-import CompletionToast from "@/components/completionToast";
 
 const ExerciseFourPage = () => {
     const { lang, id } = useParams();

@@ -1,4 +1,4 @@
-import {Link, useParams} from "react-router-dom";
+import {useParams} from "react-router-dom";
 import {useEffect, useRef, useState} from "react";
 import {DrawingUtils, FilesetResolver, GestureRecognizer} from "@mediapipe/tasks-vision";
 import {signLanguages} from "../catalog/dummyData";
