@@ -6,14 +6,16 @@ import {Button} from "@/components/ui/button";
 import {handArray} from "@/DummyDataHands"
 import Loader from "@/components/ui/loader";
 import gorilla from "@/assets/1550536471.svg"
+import { useScore } from "@/hooks/useScore";
 
 const ExercisePage = () => {
 
     
-    const {lang, ex} = useParams();
+    const {lang, id} = useParams();
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationFrameRef = useRef<number>(0);
+    const streamRef = useRef<MediaStream | null>(null);
     const currentLetterIndexRef = useRef<number>(0); // Use ref for current letter index
     const showLandmarksRef = useRef(false);
     const wordRef = useRef<string>("");
@@ -27,11 +29,17 @@ const ExercisePage = () => {
     const [alwaysShow, setAlwaysShow] = useState(false);
     const [word, setWord] = useState("");
     const [correctLetters, setCorrectLetters] = useState(new Array(word.length).fill(false));
+    const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
+    const scoredRef = useRef(false);
+
+    const { addScore } = useScore(lang ?? "");
     
     // Exercise setup
     const exercise = signLanguages
         .find((item) => item.name === lang)
-        ?.exercises.find((item) => item.id === Number(ex));
+        ?.exercises.find((item) => item.id === Number(id));
+
+    const displayLevel = (signLanguages.find(l => l.name === lang)?.exercises.filter(e => e.category === exercise?.category) ?? []).findIndex(e => e.id === exercise?.id) + 1;
 
 
     useEffect(() => {
@@ -88,24 +96,33 @@ useEffect(() => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
-            if (videoRef.current?.srcObject) {
-                (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-            }
+            streamRef.current?.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
         };
     }, []);
 
 
 
+    useEffect(() => {
+        const allDone = correctLetters.length > 0 && currentLetterIndexRef.current === -1;
+        if (allDone && !scoredRef.current) {
+            scoredRef.current = true;
+            const pts = hintShown || alwaysShow ? 50 : 100;
+            addScore(pts);
+            setEarnedPoints(pts);
+        }
+    }, [correctLetters]);
+
     const handleNewWord = () => {
         const newWord = getRandomWord();
-        
-        // Update refs FIRST
+
         wordRef.current = newWord;
         currentLetterIndexRef.current = 0;
-        
-        // Then update state
+
         setWord(newWord);
         setCorrectLetters(new Array(newWord.length).fill(false));
+        setEarnedPoints(null);
+        scoredRef.current = false;
       };
 
     const handleSignDetection = (detectedLetter: string) => {
@@ -191,9 +208,8 @@ useEffect(() => {
                 // Stop webcam and reset progress only
                 setWebcamRunning(false);
                 cancelAnimationFrame(animationFrameRef.current);
-                if (videoRef.current?.srcObject) {
-                    (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-                }
+                streamRef.current?.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
                 // Reset progress for current word
                 setCorrectLetters(new Array(word.length).fill(false));
                 currentLetterIndexRef.current = 0;
@@ -203,6 +219,7 @@ useEffect(() => {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {width: 1280, height: 720}
                 });
+                streamRef.current = stream;
 
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
@@ -227,8 +244,8 @@ useEffect(() => {
 
 
     return (
-        <div className="full max-w-6xl items-center m-auto flex flex-col gap-5 px-4 md:px-5 lg:px-10">
-            <h1 className="text-2xl font-semibold">Level {exercise?.id}</h1>
+        <div className="max-w-6xl mx-auto h-full flex flex-col items-center gap-6 px-4 md:px-5 lg:px-10 pt-6 pb-4">
+            <h1 className="text-2xl font-semibold">{exercise?.category} — Level {displayLevel}</h1>
 
 
            
@@ -236,15 +253,12 @@ useEffect(() => {
            
 
             {/* Webcam section */}
-            <div className="flex flex-col w-full items-center gap-1 sm:gap-2 md:gap-3">
+            <div className="flex flex-col w-full items-center gap-3 md:gap-4">
         
 
 <div className="flex gap-5 flex-col md:flex-row w-full justify-center items-center">
 
 
-<Link className="w-full  max-w-lg md:max-w-48" to={`/catalog/${lang}/level${(exercise?.id || 1) + 1}/${((exercise?.id || 1) + 1 )}`}>
-<Button className="w-full md:max-w-48">Next
-    Level</Button></Link>
     <Button
     onClick={toggleWebcam}
     className={`w-full max-w-lg md:max-w-48 text-white ${
@@ -259,15 +273,13 @@ useEffect(() => {
 </div>
 
  {/* Progress indicator */}
- <div className="text-center my-5 max-w-2xl w-full  text-gray-600">
+ <div className="text-center my-1 max-w-2xl w-full text-gray-600 h-10 flex items-center justify-center">
                 {currentLetterIndex === -1 ? (
-
-                   
-                        <span className="text-nowrap  text-3xl font-bold text-green-700">Completed! 🎉</span>
-                        
-
+                    <span className="text-nowrap text-xl font-bold text-green-700">
+                        Completed! 🎉{earnedPoints !== null && <span className="ml-3" style={{ color: "var(--color-main-color)" }}>+{earnedPoints} pts</span>}
+                    </span>
                 ) : (
-                    <span className="text-nowrap  text-xl font-bold">Sign the {ordinal(currentLetterIndex + 1)} letter: <span className="text-3xl">{word[currentLetterIndex]}</span></span>
+                    <span className="text-nowrap text-xl font-bold">Sign the {ordinal(currentLetterIndex + 1)} letter: <span className="text-3xl">{word[currentLetterIndex]}</span></span>
                 )}
             </div>
                    
@@ -323,11 +335,11 @@ useEffect(() => {
                                 handArray
                                     .filter(obj => obj.letter === word[currentLetterIndex])
                                     .map(obj => (
-                                        <div className="h-full w-full max-w-2/5 sm:max-w-1/4 md:max-w-1/2 border-black border-2 rounded-lg p-1" key={obj.letter}>
+                                        <div className="h-full w-full max-w-2/5 sm:max-w-1/4 md:max-w-1/2 border-black border-2 rounded-lg bg-white" key={obj.letter}>
                                             <img
                                                 src={obj.image}
                                                 alt={`Sign for ${obj.letter}`}
-                                                className="w-full h-full"
+                                                className="w-full h-full object-contain"
                                             />
 
                                         </div>
@@ -350,7 +362,7 @@ useEffect(() => {
                
 
                 <div
-                    className={`relative w-full md:max-w-3/5 aspect-[4/3] bg-black  max-h-[480px] rounded-lg overflow-hidden `}>
+                    className={`relative w-full md:max-w-3/5 aspect-[4/3] bg-black max-h-[420px] rounded-lg overflow-hidden`}>
                     <video
                         ref={videoRef}
                         autoPlay

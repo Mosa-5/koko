@@ -1,4 +1,4 @@
-const images = import.meta.glob<{ default: string }>("../assets/Hand/*.png", {eager: true});
+const images = import.meta.glob<{ default: string }>("../assets/HandClean/*.png", {eager: true});
 
 export const handArray = Object.keys(images).map((path) => {
     const fileName = path.split("/").pop()?.split(".")[0]; // Extract letter from filename

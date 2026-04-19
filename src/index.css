@@ -6,8 +6,17 @@
     --color-main-hover: oklch(0.655 0.163 52.998) ;
 }
 
+@keyframes toast-up {
+    from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.toast-enter {
+    animation: toast-up 0.2s ease-out forwards;
+}
+
 ::-webkit-scrollbar {
-    width: 5px;
+    width: 7px;
 }
 
 ::-webkit-scrollbar-track {

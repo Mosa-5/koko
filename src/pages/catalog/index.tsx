@@ -14,15 +14,11 @@ const LanguageCatalog = () => {
                             <Link
                                 onClick={(e) => index !== 0 && e.preventDefault()}
                                 to={`/catalog/${item.name}`}
-                                className='w-full max-w-72 bg-main-color rounded-lg'
+                                className='w-full max-w-72'
                             >
-                                <Button
-                                    className='min-h-28 justify-center gap-5 w-full  overflow-hidden relative flex cursor-pointer items-center p-5 px-5 border-black border-2'>
-                                    <div>
-                                    <img src={item.image} alt="" className=' w-20 h-20  border-[1px] border-black rounded-full'/>
-                                    </div>
-                                    <span className='font-semibold text-4xl'>{item.name}</span>
-                                    {index !== 0 && (<div className="absolute inset-0 bg-black opacity-50"></div>)}
+                                <Button variant="ghost" className='min-h-28 justify-center gap-5 w-full overflow-hidden relative flex items-center p-5 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors'>
+                                    <img src={item.image} alt="" className={`w-20 h-20 border border-black rounded-full ${index !== 0 ? "grayscale opacity-40" : ""}`}/>
+                                    <span className={`font-semibold text-4xl ${index !== 0 ? "text-gray-400" : ""}`}>{item.name}</span>
                                 </Button>
                             </Link>
                         )

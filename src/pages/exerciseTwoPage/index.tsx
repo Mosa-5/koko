@@ -1,102 +1,171 @@
-import {videoArray} from "@/DummyDataVideos";
-import {signLanguages} from "../catalog/dummyData";
-import {Link, useParams} from "react-router-dom";
-import React, {useState} from "react";
-import {Button} from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { videoArray } from "@/DummyDataVideos";
+import { signLanguages } from "../catalog/dummyData";
+import { Button } from "@/components/ui/button";
+import { useScore, calcOtpScore } from "@/hooks/useScore";
+import CompletionToast from "@/components/completionToast";
 
 const ExercisePage = () => {
-    const {lang, ex} = useParams();
-    const [videoName, setVideoName] = useState(getRandomVideo());
-    const [complete, setComplete] = useState(false);
-    const [incorrect, setIncorrect] = useState(false);
-    const [inputValue, setInputValue] = useState(""); // Add input state
-
-    // Add input handler
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInputValue(e.target.value);
-    };
-
-    const handleNewVideo = () => {
-        setComplete(false);
-        setInputValue("");
-        setVideoName(getRandomVideo());
-    }
-
-    // Fixed submit handler
-    const handleSubmit = () => {
-        if (inputValue.toUpperCase() === videoName.toUpperCase()) {
-            setIncorrect(false);
-            setComplete(true);
-        } else {
-            setIncorrect(true)
-        }
-    };
+    const { lang, id } = useParams();
 
     const exercise = signLanguages
         .find((item) => item.name === lang)
-        ?.exercises.find((item) => item.id === Number(ex));
+        ?.exercises.find((item) => item.id === Number(id));
 
-    // Fixed video name property access
+    const displayLevel = (signLanguages.find(l => l.name === lang)?.exercises.filter(e => e.category === exercise?.category) ?? []).findIndex(e => e.id === exercise?.id) + 1;
+
+    const [videoName, setVideoName] = useState(() => getRandomVideo());
+    const [inputs, setInputs] = useState<string[]>([]);
+    const [completed, setCompleted] = useState(false);
+    const [hintsUsed, setHintsUsed] = useState(0);
+    const [gaveUp, setGaveUp] = useState(false);
+    const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const scoredRef = useRef(false);
+
+    const { addScore } = useScore(lang ?? "");
+
+    const word = videoName.toUpperCase();
+
+    useEffect(() => {
+        setInputs(new Array(word.length).fill(""));
+        inputRefs.current = [];
+        setTimeout(() => inputRefs.current[0]?.focus(), 50);
+    }, [videoName]);
+
+    useEffect(() => {
+        if (inputs.length > 0 && inputs.every((val, i) => val === word[i])) {
+            setCompleted(true);
+        }
+    }, [inputs]);
+
+    useEffect(() => {
+        if (completed && !scoredRef.current) {
+            scoredRef.current = true;
+            const pts = calcOtpScore(hintsUsed, gaveUp);
+            if (pts > 0) {
+                addScore(pts);
+                setEarnedPoints(pts);
+            }
+        }
+    }, [completed]);
+
     function getRandomVideo(): string {
-        const number = videoArray.length;
-        return number > 0 ? videoArray[Math.floor(Math.random() * number)].name || "" : "";
+        return videoArray.length > 0
+            ? videoArray[Math.floor(Math.random() * videoArray.length)].name || ""
+            : "";
     }
 
+    const handleNewVideo = () => {
+        setCompleted(false);
+        setHintsUsed(0);
+        setGaveUp(false);
+        setEarnedPoints(null);
+        scoredRef.current = false;
+        setVideoName(getRandomVideo());
+    };
+
+    const handleInput = (index: number, value: string) => {
+        const char = value.slice(-1).toUpperCase();
+        const newInputs = [...inputs];
+        newInputs[index] = char;
+        setInputs(newInputs);
+        if (char && index < word.length - 1) {
+            inputRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Backspace") {
+            if (inputs[index]) {
+                const newInputs = [...inputs];
+                newInputs[index] = "";
+                setInputs(newInputs);
+            } else if (index > 0) {
+                inputRefs.current[index - 1]?.focus();
+                const newInputs = [...inputs];
+                newInputs[index - 1] = "";
+                setInputs(newInputs);
+            }
+            e.preventDefault();
+        }
+    };
+
+    const letterStatus = (index: number) => {
+        if (!inputs[index]) return "empty";
+        return inputs[index] === word[index] ? "correct" : "incorrect";
+    };
+
+    const handleHintChar = () => {
+        const nextIndex = inputs.findIndex((val, i) => val !== word[i]);
+        if (nextIndex === -1) return;
+        const newInputs = [...inputs];
+        newInputs[nextIndex] = word[nextIndex];
+        setInputs(newInputs);
+        setHintsUsed(h => h + 1);
+    };
+
+    const handleGiveUp = () => {
+        setGaveUp(true);
+        setInputs(word.split(""));
+    };
+
     return (
-        <div className="full max-w-6xl px-5 items-center m-auto flex flex-col gap-5 mb-30">
-            <h1 className="text-2xl font-semibold">Level {exercise?.id}</h1>
+        <div className="max-w-4xl mx-auto h-full flex flex-col items-center gap-6 px-4 md:px-8 pt-6 pb-4">
+            <h1 className="text-2xl font-semibold">{exercise?.category} — Level {displayLevel}</h1>
 
-         
-
-                <div className="flex gap-5 flex-col md:flex-row w-full max-w-2xl my-5 justify-between items-center">
-
-                    <Button className="w-full max-w-lg md:max-w-48" onClick={() => handleNewVideo()}>New Word</Button>
-                    {complete && <span className="text-nowrap text-3xl font-bold text-green-700">Completed! 🎉</span>}
-                    {incorrect && <span className="text-red-600 text-xl">Incorrect!</span>}
-                    <Link className="w-full max-w-lg md:max-w-48" to={`/catalog/${lang}/level${(exercise?.id || 1) + 1}/${((exercise?.id || 1) + 1)}`}>
-                    <Button className="w-full">Next
-                        level</Button></Link>
-                </div>
-
-            
-
-            <div className="w-full rounded-lg max-w-3xl">
+            <div className="w-full max-w-3xl flex justify-center">
                 {videoArray
-                    .filter(obj => obj.name === videoName) // Fixed property name
+                    .filter(obj => obj.name === videoName)
                     .map(obj => (
-                        <div key={obj.name} className="relative">
-                            <video
-                                muted
-                                controls
-                                width="100%"
-                                height="auto"
-                                className="border-black bg-black border-2 rounded-lg p-1"
-                            >
-                                <source src={obj.video} type="video/mp4"/>
-                                Your browser does not support the video tag.
-                            </video>
-                        </div>
+                        <video
+                            key={obj.name}
+                            muted
+                            controls
+                            className="border-2 border-black bg-black rounded-lg"
+                            style={{ maxWidth: "100%", maxHeight: "50vh" }}
+                        >
+                            <source src={obj.video} type="video/mp4"/>
+                        </video>
                     ))}
             </div>
 
-            <p className="text-xl font-semibold text-center mt-5">
-                Write down the word signed in the video
+            <p className="text-xl font-semibold text-center">
+                {completed
+                    ? <span className="text-green-600">Completed! 🎉{earnedPoints !== null && !gaveUp ? <span className="ml-3" style={{ color: "var(--color-main-color)" }}>+{earnedPoints} pts</span> : gaveUp ? <span className="ml-3 text-gray-400 text-base font-normal">No points awarded</span> : null}</span>
+                    : "Type the word signed in the video"
+                }
             </p>
 
-            {/* Added controlled input */}
-            <input
-                className="w-full max-w-xl h-10 p-2 bg-indigo-50 border-2 border-black rounded-lg"
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
-            />
+            <div className="flex gap-4 flex-wrap justify-center">
+                {word.split("").map((_, i) => {
+                    const status = letterStatus(i);
+                    return (
+                        <input
+                            key={i}
+                            ref={el => { inputRefs.current[i] = el; }}
+                            type="text"
+                            value={inputs[i] ?? ""}
+                            onChange={e => handleInput(i, e.target.value)}
+                            onKeyDown={e => handleKeyDown(i, e)}
+                            disabled={completed}
+                            className={`w-12 h-12 md:w-14 md:h-14 text-center text-xl font-bold border-2 rounded-lg outline-none transition-colors
+                                ${status === "correct"   ? "border-green-500 text-green-600 bg-green-50" :
+                                  status === "incorrect" ? "border-red-400 text-red-600 bg-red-50" :
+                                  "border-black focus:border-[var(--color-main-color)]"}`}
+                        />
+                    );
+                })}
+            </div>
 
-            {/* Fixed button click handler */}
-            <Button className="w-full max-w-lg md:max-w-49 tracking-widest" onClick={handleSubmit}>
-                Submit
-            </Button>
+            <div className="flex gap-4 flex-wrap justify-center">
+                <Button onClick={handleHintChar} className={`min-w-36 ${completed ? "invisible" : ""}`}>Hint {hintsUsed > 0 && `(${hintsUsed})`}</Button>
+                <Button onClick={handleGiveUp} className={`min-w-36 bg-red-500 hover:bg-red-400 text-white ${completed ? "invisible" : ""}`}>Give Up</Button>
+                <Button onClick={handleNewVideo} className="min-w-36">New Word</Button>
+            </div>
         </div>
-    )
-}
+    );
+};
+
 export default ExercisePage;

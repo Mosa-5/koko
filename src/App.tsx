@@ -1,15 +1,35 @@
 import {lazy, Suspense} from "react"
-import {Navigate, Route, Routes} from "react-router-dom"
+import {Navigate, Route, Routes, useParams} from "react-router-dom"
 import Layout from "./layout"
+import ExerciseLayout from "./layout/exerciseLayout"
 import Loader from "./components/ui/loader"
+import {signLanguages} from "./pages/catalog/dummyData"
 
 const HomePage = lazy(() => import("./pages/homePage"))
 const LanguageCatalog = lazy(() => import("./pages/catalog"))
 const LanguageExercises = lazy(() => import("./pages/languagePage"))
 const ExerciseOnePage = lazy(() => import("./pages/exerciseOnePage"))
 const ExerciseTwoPage = lazy(() => import("./pages/exerciseTwoPage"))
+const ExerciseFourPage = lazy(() => import("./pages/exerciseFourPage"))
+const ExerciseFivePage = lazy(() => import("./pages/exerciseFivePage"))
+const ManualPage = lazy(() => import("./pages/manualPage"))
 const AboutUs = lazy(() => import("./pages/aboutUsPage"))
 
+const ExerciseRouter = () => {
+    const { lang, id } = useParams();
+    const exercise = signLanguages
+        .find(l => l.name === lang)
+        ?.exercises.find(e => e.id === Number(id));
+
+    if (!exercise) return <div className="flex justify-center items-center h-screen text-2xl">Exercise not found</div>;
+
+    switch (exercise.exerciseType) {
+        case "sign":          return <ExerciseOnePage />;
+        case "watch":         return <ExerciseTwoPage />;
+        case "read-word":     return <ExerciseFourPage />;
+        case "read-sentence": return <ExerciseFivePage />;
+    }
+};
 
 function App() {
     return (
@@ -23,11 +43,14 @@ function App() {
                 <Route index element={<Navigate to={'/home'}/>}/>
                 <Route path='/home' element={<HomePage/>}/>
                 <Route path='/catalog' element={<LanguageCatalog/>}/>
-                <Route path='/catalog/:lang' element={<LanguageExercises/>}/>
-                <Route path='/catalog/:lang/level1/:ex' element={<ExerciseOnePage/>}/>
-                <Route path='/catalog/:lang/level2/:ex' element={<ExerciseTwoPage/>}/>
-                <Route path='/catalog/:lang/level3/:ex' element={<ExerciseOnePage/>}/>
                 <Route path="/aboutUs" element={<AboutUs/>}/>
+            </Route>
+
+            <Route path='/catalog/:lang' element={<LanguageExercises/>}/>
+            <Route path='/catalog/:lang/manual' element={<ManualPage/>}/>
+
+            <Route element={<ExerciseLayout/>}>
+                <Route path='/catalog/:lang/exercise/:id' element={<ExerciseRouter/>}/>
             </Route>
 
             <Route path='*' element={
@@ -38,7 +61,6 @@ function App() {
         </Routes>
         </Suspense>
     )
+}
 
-  }
-
-  export default App;
+export default App;
